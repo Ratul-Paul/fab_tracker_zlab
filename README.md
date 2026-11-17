@@ -97,12 +97,17 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
   purpose, and **tags**. Tags are free text (Full laser, Passive only, Deep trench, Cleaved, No PECVD
   are suggested, and any tag you type is offered to everyone next time). On the overview page you can
   filter by one or more tags.
-- **Overview rows** show name, tags, people and progress. A layout's description is on its own page (search still looks
-  inside it). Rows carry a faint tint: red when any step has an open issue, blue-grey while In fab, green when Done.
-- **Sort and group** (overview page): sort layouts by last updated, date created, name, Design start,
-  Fab start, Fab finish or Measurement start. The arrow button reverses the order, and layouts without
-  that date always go last. **Group** chooses between sections by status and one flat list. Your choice
-  is remembered in your browser.
+- **Overview rows** show name, tags, people and progress, plus a chip for each of Design, Fab and Measurement:
+  a green check with the date range when finished, a solid blue chip with "since Nov 5 · day 4" while ongoing, a solid
+  red chip when overdue, and a faint dashed chip when not started. A layout's description is on its own page (search
+  still looks inside it). Rows also carry a faint tint: red when any step has an open issue, blue-grey while In fab,
+  green when Done.
+- **Sort, group and collapse** (overview page): sort layouts by last updated, date created, name, Design start,
+  Fab start, Fab finish or Measurement start. The arrow button reverses the order, and layouts without that date always
+  go last. **Group** chooses between sections by status and one flat list. Each status section can be collapsed with
+  its arrow, and has its own **Sort** (same as main sort, last modified, newest first or oldest first). Your choices
+  are remembered in your browser.
+- **Open GDS file** and **Open from Drive** sit together in the tools row under the filters.
 - **Design**: GDS, DXF and other design files. Upload them (up to 25 MB; zip or gzip big GDS files) or
   link them from Box or Google Drive. Uploaded GDS files have a **View layout** button.
 - **Fab**: the process steps.
@@ -152,8 +157,7 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
   date counts as day 1, so a 5-day time frame started on the 1st is due on the 5th and overdue from the 6th.
   Anything that has a start date and a time frame, and is not finished, is labelled **Overdue by N days** in red.
   Sections are finished when they have a finish date, and steps when they are ticked done or crossed. Overdue
-  shows on the step, in the section row and timeline, in the layout summary, and on the overview. The CSV export
-  has the time frames and an Overdue column. Duplicating a layout keeps its time frames but not its dates.
+  shows on the step, in the section row and timeline, in the layout summary, and on the overview. Duplicating a layout keeps its time frames but not its dates.
 - **Duplicate layout** (bottom of a layout page): makes a copy with the same type, purpose and tags.
   Choose whether to copy the steps (reset to not started), their recipes and notes, and linked design files.
   Uploaded files, results, issues, dates and history are not copied. The copy starts as Planned.
@@ -163,7 +167,6 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
   name and recipe and start as not started. The clipboard is kept in your browser, so it also works
   after a reload or in another tab.
 - Changes by other people appear within 30 seconds, or press **Refresh**.
-- **Export CSV** on the overview page lists every step with tags, section dates, start date, recipe and open issues.
 
 ## Good to know
 - Two people editing the same layout at once is handled. The app re-reads the latest version

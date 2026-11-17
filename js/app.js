@@ -2,7 +2,7 @@
 'use strict';
 
 const CFG = window.FAB_CONFIG || {};
-const BUILD = '2026-11-19-1';
+const BUILD = '2026-11-20-1';
 const LS_KEY = 'fabtracker.v1';
 const MAX_UPLOAD = 25 * 1024 * 1024;
 const SYNC_MS = 30000;
@@ -30,6 +30,7 @@ const ICO = {
   external:'<path d="M9 3h4v4M13 3L7.5 8.5M11 9.5V13H3V5h3.5"/>',
   alert:'<path d="M8 2l6.5 11.5h-13L8 2z"/><path d="M8 6.5v3M8 11.6v.1"/>',
   play:'<path d="M5 3l8 5-8 5z"/>',
+  chev:'<path d="M4 6l4 4 4-4"/>',
   clip:'<path d="M13 7.5l-5 5a3 3 0 01-4.2-4.2l5.5-5.5a2 2 0 012.9 2.9L6.7 11.2a1 1 0 01-1.4-1.4L10 5.1"/>'
 };
 const ico = n => `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
@@ -38,7 +39,7 @@ const S = {
   cfg:null, me:null, canWrite:true, mode:'boot', err:'', setupErr:'',
   srv:{}, pend:{}, queue:{}, busy:{}, L:[], byId:{},
   presets:[], presetsSha:null, loaded:false, syncing:false, lastSync:0,
-  q:'', type:'all', R:[], RBy:{}, recipeCustom:[], replyTo:'', replyPrefill:'', editComment:'', rq:'', rproc:'all', rstatus:'all', editRBody:false, tagFilter:[], sortKey:'updated', sortDir:'desc', group:'status', editBlock:null, selMode:false, sel:[], kindFilter:'all', tab:'fab', open:{}, fileStep:'', armed:null,
+  q:'', type:'all', collapsed:{}, gsort:{}, R:[], RBy:{}, recipeCustom:[], replyTo:'', replyPrefill:'', editComment:'', rq:'', rproc:'all', rstatus:'all', editRBody:false, tagFilter:[], sortKey:'updated', sortDir:'desc', group:'status', editBlock:null, selMode:false, sel:[], kindFilter:'all', tab:'fab', open:{}, fileStep:'', armed:null,
   down:false, dirty:false, blobs:{}
 };
 const $ = s => document.querySelector(s);
@@ -66,8 +67,9 @@ function toast(msg){
 const errText = e => (e && e.detail) ? `${e.status}: ${e.detail}` : (e && e.status ? String(e.status) : 'network error');
 
 const VIEW_KEY = 'fabtracker.view';
-try { const v = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}'); if (v.sortKey) S.sortKey = v.sortKey; if (v.sortDir) S.sortDir = v.sortDir; if (v.group) S.group = v.group; } catch (_) {}
-const saveView = () => { try { localStorage.setItem(VIEW_KEY, JSON.stringify({sortKey:S.sortKey, sortDir:S.sortDir, group:S.group})); } catch (_) {} };
+try { const v = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}'); if (v.sortKey) S.sortKey = v.sortKey; if (v.sortDir) S.sortDir = v.sortDir; if (v.group) S.group = v.group; if (v.collapsed) S.collapsed = v.collapsed; if (v.gsort) S.gsort = v.gsort; } catch (_) {}
+const saveView = () => { try { localStorage.setItem(VIEW_KEY, JSON.stringify({sortKey:S.sortKey, sortDir:S.sortDir, group:S.group, collapsed:S.collapsed, gsort:S.gsort})); } catch (_) {} };
+const GSORTS = [['global','Same as main sort'],['modified','Last modified'],['newest','Newest first'],['oldest','Oldest first']];
 const SORTS = [['updated','Last updated'],['created','Date created'],['name','Name'],['design','Design start'],['fab','Fab start'],['fabend','Fab finish'],['results','Measurement start']];
 
 /* ---------- people ---------- */
@@ -667,10 +669,11 @@ function matchLayout(l){
   const q = S.q.trim().toLowerCase(); if (!q) return true;
   return [l.name, l.purpose, ...l.tags, ...(l.workers || [])].join(' ').toLowerCase().includes(q);
 }
-function sortLayouts(arr){
-  const dir = S.sortDir === 'asc' ? 1 : -1;
+function sortLayouts(arr, key, dirName){
+  key = key || S.sortKey; dirName = dirName || S.sortDir;
+  const dir = dirName === 'asc' ? 1 : -1;
   const val = l => {
-    switch (S.sortKey){
+    switch (key){
       case 'created': return l.createdAt || 0;
       case 'name': return l.name.toLowerCase();
       case 'design': return secOf(l, 'design').start || '';
@@ -693,7 +696,7 @@ function ovRow(l){
   return `<div class="row ${tint}" role="link" tabindex="0" data-act="open" data-id="${l.id}">
         <div><div class="nm">${esc(l.name)}</div><div class="tagrow">${l.type ? `<span class="tag ${l.type}">${l.type === 'active' ? 'Active' : 'Passive'}</span>` : ''}${S.group === 'none' ? `<span class="tagc">${esc(stLabel)}</span>` : ''}${tagChips(l)}</div></div>
         <div class="c-who">${l.workers.length ? l.workers.map(w => who(w)).join('') : '<span class="who">Unassigned</span>'}</div>
-        <div class="c-prog">${strip(l)}${tlShort(l)}<small>${st.total ? `${st.pass} of ${st.total} done${st.fail ? ` · ${st.fail} failed` : ''}` : 'No steps yet'}${oi ? ` · <span class="iss">${oi} open issue${oi > 1 ? 's' : ''}</span>` : ''}${overdueSteps(l) ? ` · <span class="iss">${overdueSteps(l)} overdue</span>` : ''}${l.comments.length ? ` · ${plural(l.comments.length, 'comment')}` : ''}</small></div>
+        <div class="c-prog">${strip(l)}${tlChips(l)}<small>${st.total ? `${st.pass} of ${st.total} done${st.fail ? ` · ${st.fail} failed` : ''}` : 'No steps yet'}${oi ? ` · <span class="iss">${oi} open issue${oi > 1 ? 's' : ''}</span>` : ''}${overdueSteps(l) ? ` · <span class="iss">${overdueSteps(l)} overdue</span>` : ''}${l.comments.length ? ` · ${plural(l.comments.length, 'comment')}` : ''}</small></div>
       </div>`;
 }
 function ovList(){
@@ -705,7 +708,12 @@ function ovList(){
   if (S.group === 'none') return `<section class="group"><h2>All layouts <span>${list.length}</span></h2><div class="rows">${list.map(ovRow).join('')}</div></section>`;
   return STATUS.map(([k, label]) => {
     const g = list.filter(l => (l.status || 'planned') === k); if (!g.length) return '';
-    return `<section class="group"><h2>${label} <span>${g.length}</span></h2><div class="rows">${g.map(ovRow).join('')}</div></section>`;
+    const col = !!S.collapsed[k], mode = S.gsort[k] || 'global';
+    const rows = mode === 'modified' ? sortLayouts(g, 'updated', 'desc') : mode === 'newest' ? sortLayouts(g, 'created', 'desc') : mode === 'oldest' ? sortLayouts(g, 'created', 'asc') : g;
+    return `<section class="group ${col ? 'collapsed' : ''}"><div class="ghead">
+      <button class="gtoggle" data-act="gtoggle" data-g="${k}" aria-expanded="${!col}" title="${col ? 'Show' : 'Hide'} ${label}">${ico('chev')}<span class="gname">${label}</span><span class="gcount">${g.length}</span></button>
+      ${col ? '' : `<label class="gsort">Sort <select data-gsort="${k}" aria-label="Sort ${label}">${GSORTS.map(([v, t]) => `<option value="${v}" ${mode === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`}
+    </div>${col ? '' : `<div class="rows">${rows.map(ovRow).join('')}</div>`}</section>`;
   }).join('');
 }
 function activity(){
@@ -759,9 +767,23 @@ function rangeText(r, full){
 function timeline(l){
   return `<div class="timeline" aria-label="Section dates">${SECTIONS.map(([k, t]) => { const r = secOf(l, k), i = secInfo(l, k), late = i && i.late; return `<span class="tl ${r.start ? (r.end ? 'done' : (late ? 'late' : 'on')) : ''}"><b>${t}</b> ${esc(rangeText(r, true))}${late ? ' · overdue' : ''}</span>`; }).join('')}</div>`;
 }
-function tlShort(l){
-  const parts = SECTIONS.map(([k, t]) => { const r = secOf(l, k), i = secInfo(l, k); return (r.start || r.end) ? `${t} ${esc(rangeText(r, false))}${i && i.late ? ' <span class="iss">overdue</span>' : ''}` : ''; }).filter(Boolean);
-  return parts.length ? `<small class="tls">${parts.join(' · ')}</small>` : '';
+function tlChips(l){
+  if (!SECTIONS.some(([k]) => { const r = secOf(l, k); return r.start || r.end; })) return '';
+  const today = todayStr();
+  return `<div class="tlrow">${SECTIONS.map(([k, t]) => {
+    const r = secOf(l, k), i = secInfo(l, k);
+    if (r.end){
+      const txt = r.start ? `${fmtShort(r.start)} – ${fmtShort(r.end)}` : `Finished ${fmtShort(r.end)}`;
+      return `<span class="tlc done" title="${t}: completed ${esc(rangeText(r, true))}"><i>${ico('check')}</i><b>${t}</b><span>${esc(txt)}</span></span>`;
+    }
+    if (r.start && r.start > today) return `<span class="tlc none" title="${t}: starts ${esc(fmtDate(r.start))}"><b>${t}</b><span>starts ${esc(fmtShort(r.start))}</span></span>`;
+    if (r.start){
+      const day = daysBetween(r.start, today) + 1;
+      if (i && i.late) return `<span class="tlc late" title="${t}: overdue by ${plural(i.over, 'day')} (was due ${esc(fmtDate(i.due))})"><i>${ico('alert')}</i><b>${t}</b><span>since ${esc(fmtShort(r.start))} · overdue ${i.over} d</span></span>`;
+      return `<span class="tlc on" title="${t}: ongoing since ${esc(fmtDate(r.start))}, day ${day}"><i class="dot"></i><b>${t}</b><span>since ${esc(fmtShort(r.start))} · day ${day}</span></span>`;
+    }
+    return `<span class="tlc none" title="${t}: not started"><b>${t}</b></span>`;
+  }).join('')}</div>`;
 }
 function secDates(l, key){
   const r = secOf(l, key), ro = S.canWrite ? '' : 'disabled', label = SECTIONS.find(x => x[0] === key)[1];
@@ -794,9 +816,10 @@ function viewOverview(){
     <label class="fld">Sort <select data-sort aria-label="Sort layouts">${SORTS.map(([k, t]) => `<option value="${k}" ${S.sortKey === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     <button class="btn" data-act="sortdir" title="${S.sortDir === 'asc' ? 'Oldest or A to Z first. Click to reverse.' : 'Newest or Z to A first. Click to reverse.'}" aria-label="Reverse sort order">${ico(S.sortDir === 'asc' ? 'up' : 'down')} ${S.sortDir === 'asc' ? (S.sortKey === 'name' ? 'A–Z' : 'Oldest first') : (S.sortKey === 'name' ? 'Z–A' : 'Newest first')}</button>
     <label class="fld">Group <select data-group aria-label="Group layouts"><option value="status" ${S.group === 'status' ? 'selected' : ''}>By status</option><option value="none" ${S.group === 'none' ? 'selected' : ''}>No grouping</option></select></label>
+  </div>
+  <div class="bar tools">
     <button class="btn" data-act="openlocal" title="View a GDS file from your computer without uploading it">Open GDS file</button>
     <button class="btn" data-act="opendrive" title="View a GDS file from a Google Drive link">Open from Drive</button>
-    ${S.L.length ? '<button class="btn" data-act="export">Export CSV</button>' : ''}
     <button class="btn ghost" data-act="refresh" title="Fetch the latest from GitHub">Refresh</button>
   </div>
   ${tagBar()}
@@ -1627,21 +1650,6 @@ async function doResultImages(lid){
   } catch (e){ btn.disabled = false; btn.textContent = 'Add'; toast('Couldn’t add the image (' + errText(e) + ').'); }
 }
 
-/* ---------- export ---------- */
-function recipeNameOfStep(s){ const r = s.recipeId && S.RBy[s.recipeId]; return r ? recipeName(r) : (s.recipe || ''); }
-function exportCsv(){
-  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['Layout','Type','Tags','Status','Design start','Design finish','Design days','Fab start','Fab finish','Fab days','Measurement start','Measurement finish','Measurement days','Purpose','Workers','Step #','Step','Started','Time frame (days)','Overdue','Recipe','Result','Open issues','Note','Updated by','Updated at']];
-  S.L.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(l => {
-    const sd = k => [secOf(l, k).start || '', secOf(l, k).end || '', secOf(l, k).days || ''];
-    const base = [l.name, l.type, l.tags.join('; '), l.status, ...sd('design'), ...sd('fab'), ...sd('results'), l.purpose, l.workers.join('; ')];
-    if (!l.steps.length) rows.push([...base, ...Array(11).fill('')]);
-    l.steps.forEach((s, i) => rows.push([...base, i + 1, s.name, s.started || '', s.days || '', (stepInfo(s) || {}).late ? 'Yes' : 'No', recipeNameOfStep(s), stateWord(s.state), s.issues.filter(x => !x.resolved).map(x => x.text).join(' | '), s.note, s.at ? s.by : '', s.at ? new Date(s.at).toISOString() : '']));
-  });
-  const blob = new Blob([rows.map(r => r.map(q).join(',')).join('\n')], {type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fab-tracker.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-}
 
 /* ---------- events ---------- */
 document.addEventListener('pointerdown', () => { S.down = true; }, true);
@@ -1727,6 +1735,7 @@ document.addEventListener('change', e => {
     if (st && (st.days || '') !== v) setStepFields(lid, t.dataset.sdays, {days:v}, v ? 'Time frame: ' + plural(v, 'day') : 'Time frame cleared');
   }
   else if (t.dataset.secdate) setSecDate(lid, t.dataset.secdate, t.dataset.which, t.value);
+  else if (t.dataset.gsort !== undefined){ S.gsort[t.dataset.gsort] = t.value; saveView(); sched(); }
   else if (t.dataset.sort !== undefined){ S.sortKey = t.value; S.sortDir = t.value === 'name' ? 'asc' : 'desc'; saveView(); sched(); }
   else if (t.dataset.group !== undefined){ S.group = t.value; saveView(); sched(); }
   else if (t.dataset.btitle) updateBlock(lid, t.dataset.btitle, {title:t.value.trim()});
@@ -1748,7 +1757,6 @@ document.addEventListener('click', e => {
     case 'typefilter': S.type = t.dataset.v; sched(); break;
     case 'tagfilter': { const tg = t.dataset.tag, i = S.tagFilter.findIndex(x => x.toLowerCase() === tg.toLowerCase()); if (i >= 0) S.tagFilter.splice(i, 1); else S.tagFilter.push(tg); sched(); break; }
     case 'cleartags': S.tagFilter = []; sched(); break;
-    case 'export': exportCsv(); break;
     case 'tab': S.tab = t.dataset.v; S.kindFilter = 'all'; sched(); break;
     case 'toggle': S.open[id] = !S.open[id]; sched(); break;
     case 'mark': if (S.canWrite) setMark(lid, id, t.dataset.state); break;
@@ -1813,6 +1821,7 @@ document.addEventListener('click', e => {
     case 'cmcancel': S.editComment = ''; sched(); break;
     case 'cmsave': saveCommentEdit(t.dataset.cid); break;
     case 'cmdel': arm('cm' + t.dataset.cid, () => delComment(cmTarget(), t.dataset.cid)); break;
+    case 'gtoggle': S.collapsed[t.dataset.g] = !S.collapsed[t.dataset.g]; saveView(); sched(); break;
     case 'secnow': setSecDate(lid, t.dataset.sec, t.dataset.which, todayStr()); break;
     case 'dupe': openDuplicate(id); break;
     case 'dodupe': doDuplicate(id); break;
