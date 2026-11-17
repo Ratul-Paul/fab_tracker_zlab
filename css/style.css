@@ -501,3 +501,24 @@ textarea.txt{width:100%;resize:vertical;display:block}
   .gsort select{max-width:150px}
   .tlrow{gap:4px}
 }
+
+/* ---- overview: Design / Fab / Measurement each on their own row ---- */
+.tlrow{flex-direction:column;align-items:flex-start;gap:4px}
+.tlc b{display:inline-block;min-width:6.2em}
+.tlc.none b{min-width:6.2em}
+
+/* ---- overview cards: separate bordered cards ---- */
+.rows{display:grid;gap:12px;background:none;border:0;border-radius:0;overflow:visible;box-shadow:none}
+.row{background:var(--raised);border:2px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+.row+.row{border-top:2px solid var(--line)}
+.row:hover{border-color:var(--line-strong);background:var(--surface)}
+.row.tint-issue{border-color:color-mix(in srgb,var(--fail) 40%,var(--line))}
+.row.tint-fab{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.row.tint-done{border-color:color-mix(in srgb,var(--pass) 35%,var(--line))}
+.row.tint-issue:hover{border-color:color-mix(in srgb,var(--fail) 60%,var(--line))}
+.row.tint-fab:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.row.tint-done:hover{border-color:color-mix(in srgb,var(--pass) 55%,var(--line))}
+@media (max-width:720px){ .row{padding:14px} .rows{gap:10px} }
+
+/* ---- last modified line under card titles ---- */
+.lm{font-size:12.5px;color:var(--faint);margin:0 0 6px;line-height:1.3}

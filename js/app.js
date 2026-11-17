@@ -2,7 +2,7 @@
 'use strict';
 
 const CFG = window.FAB_CONFIG || {};
-const BUILD = '2026-11-20-1';
+const BUILD = '2026-11-22-1';
 const LS_KEY = 'fabtracker.v1';
 const MAX_UPLOAD = 25 * 1024 * 1024;
 const SYNC_MS = 30000;
@@ -122,7 +122,8 @@ function strip(l, big){
 /* ---------- writing: optimistic UI, queued commits, retry on conflict ---------- */
 function mutate(id, fn, message){
   const ts = Date.now();
-  const wrapped = d => { fn(d); d.updatedAt = ts; };
+  const by = S.me ? S.me.login : '';
+  const wrapped = d => { fn(d); d.updatedAt = ts; if (by) d.updatedBy = by; };
   const p = {fn: wrapped};
   (S.pend[id] ||= []).push(p);
   rebuild(); sched();
@@ -408,7 +409,7 @@ async function duplicateRecipe(id){
   const nid = rid(), t = Date.now();
   const data = {id:nid, name:src.name + ' (copy)', process:src.process || '', version:'', status:'draft', tools:src.tools || '', body:src.body || '',
     files:src.files.filter(f => f.source === 'link').map(f => Object.assign({}, clone(f), {id:rid(), by:me(), at:t})), issues:[],
-    history:[{by:me(), at:t, note:'Duplicated from ' + recipeName(src)}], createdBy:me(), createdAt:t, updatedAt:t};
+    history:[{by:me(), at:t, note:'Duplicated from ' + recipeName(src)}], createdBy:me(), createdAt:t, updatedAt:t, updatedBy:me()};
   try {
     const r = await GH.putJson(recipePath(nid), data, null, `Duplicate recipe ${src.name} [${me()}]`);
     S.srv[rKey(nid)] = {data, sha:r.sha}; rebuild(); location.hash = 'r-' + nid; sched();
@@ -502,7 +503,7 @@ async function duplicateLayout(srcId, o){
   const steps = o.steps ? src.steps.map(x => Object.assign(newStep(x.name), {days:x.days || '', recipe:o.recipes ? (x.recipe || '') : '', recipeId:o.recipes ? (x.recipeId || '') : '', note:o.notes ? (x.note || '') : ''})) : [];
   const files = o.links ? src.files.filter(f => f.source === 'link' && DESIGN_KINDS.includes(f.kind || 'other')).map(f => Object.assign({}, clone(f), {id:rid(), stepId:'', by:me(), at:t})) : [];
   const data = {id, name:o.name, type:src.type, status:'planned', purpose:src.purpose || '', tags:src.tags.slice(), workers:[me()],
-    createdBy:me(), createdAt:t, updatedAt:t, dates:Object.fromEntries(SECTIONS.filter(([k]) => secOf(src, k).days).map(([k]) => [k, {start:'', end:'', days:secOf(src, k).days}])), steps, files, results:[]};
+    createdBy:me(), createdAt:t, updatedAt:t, updatedBy:me(), dates:Object.fromEntries(SECTIONS.filter(([k]) => secOf(src, k).days).map(([k]) => [k, {start:'', end:'', days:secOf(src, k).days}])), steps, files, results:[]};
   const r = await GH.putJson(layoutPath(id), data, null, `Duplicate layout ${src.name} as ${o.name} [${me()}]`);
   S.srv[id] = {data, sha:r.sha}; rebuild();
   return id;
@@ -689,12 +690,16 @@ function sortLayouts(arr, key, dirName){
     return (x < y ? -1 : x > y ? 1 : 0) * dir;
   });
 }
+function lmLine(d){
+  if (!d.updatedAt) return '';
+  return `<div class="lm" title="Last modified ${esc(new Date(d.updatedAt).toLocaleString())}">Modified ${esc(fmt(d.updatedAt))}${d.updatedBy ? ' · ' + esc(d.updatedBy) : ''}</div>`;
+}
 function ovRow(l){
   const st = stats(l), oi = openIssues(l);
   const tint = oi ? 'tint-issue' : l.status === 'infab' ? 'tint-fab' : l.status === 'done' ? 'tint-done' : '';
   const stLabel = (STATUS.find(x => x[0] === (l.status || 'planned')) || [])[1] || '';
   return `<div class="row ${tint}" role="link" tabindex="0" data-act="open" data-id="${l.id}">
-        <div><div class="nm">${esc(l.name)}</div><div class="tagrow">${l.type ? `<span class="tag ${l.type}">${l.type === 'active' ? 'Active' : 'Passive'}</span>` : ''}${S.group === 'none' ? `<span class="tagc">${esc(stLabel)}</span>` : ''}${tagChips(l)}</div></div>
+        <div><div class="nm">${esc(l.name)}</div>${lmLine(l)}<div class="tagrow">${l.type ? `<span class="tag ${l.type}">${l.type === 'active' ? 'Active' : 'Passive'}</span>` : ''}${S.group === 'none' ? `<span class="tagc">${esc(stLabel)}</span>` : ''}${tagChips(l)}</div></div>
         <div class="c-who">${l.workers.length ? l.workers.map(w => who(w)).join('') : '<span class="who">Unassigned</span>'}</div>
         <div class="c-prog">${strip(l)}${tlChips(l)}<small>${st.total ? `${st.pass} of ${st.total} done${st.fail ? ` · ${st.fail} failed` : ''}` : 'No steps yet'}${oi ? ` · <span class="iss">${oi} open issue${oi > 1 ? 's' : ''}</span>` : ''}${overdueSteps(l) ? ` · <span class="iss">${overdueSteps(l)} overdue</span>` : ''}${l.comments.length ? ` · ${plural(l.comments.length, 'comment')}` : ''}</small></div>
       </div>`;
@@ -768,7 +773,6 @@ function timeline(l){
   return `<div class="timeline" aria-label="Section dates">${SECTIONS.map(([k, t]) => { const r = secOf(l, k), i = secInfo(l, k), late = i && i.late; return `<span class="tl ${r.start ? (r.end ? 'done' : (late ? 'late' : 'on')) : ''}"><b>${t}</b> ${esc(rangeText(r, true))}${late ? ' · overdue' : ''}</span>`; }).join('')}</div>`;
 }
 function tlChips(l){
-  if (!SECTIONS.some(([k]) => { const r = secOf(l, k); return r.start || r.end; })) return '';
   const today = todayStr();
   return `<div class="tlrow">${SECTIONS.map(([k, t]) => {
     const r = secOf(l, k), i = secInfo(l, k);
@@ -887,7 +891,7 @@ function recipeFileCard(r, f){
 function rRow(r){
   const oi = openRecipeIssues(r), n = recipeUse(r).length;
   return `<div class="row rrow" role="link" tabindex="0" data-act="openrecipe" data-id="${r.id}">
-    <div><div class="nm">${esc(r.name)} ${recipeVer(r) ? `<span class="ver-tag">${esc(recipeVer(r))}</span>` : ''}</div><div class="tagrow">${r.status !== 'active' ? `<span class="tagc">${r.status === 'draft' ? 'Draft' : 'Retired'}</span>` : ''}${r.tools ? `<span class="hint" style="margin:0">${esc(r.tools)}</span>` : ''}</div></div>
+    <div><div class="nm">${esc(r.name)} ${recipeVer(r) ? `<span class="ver-tag">${esc(recipeVer(r))}</span>` : ''}</div>${lmLine(r)}<div class="tagrow">${r.status !== 'active' ? `<span class="tagc">${r.status === 'draft' ? 'Draft' : 'Retired'}</span>` : ''}${r.tools ? `<span class="hint" style="margin:0">${esc(r.tools)}</span>` : ''}</div></div>
     <div class="purpose">${esc((r.body || '').replace(/[#*`\-]/g, '').slice(0, 140) || 'No parameters written yet')}</div>
     <div class="c-prog"><small>${n ? `Used in ${n} step${n > 1 ? 's' : ''}` : 'Not used yet'}${r.comments.length ? ` · ${plural(r.comments.length, 'comment')}` : ''}</small></div>
     <div class="c-prog">${oi ? `<span class="issue-badge">${ico('alert')} ${oi} open issue${oi > 1 ? 's' : ''}</span>` : `<small>${r.issues.length ? 'All issues resolved' : 'No issues'}</small>`}</div>
@@ -1193,7 +1197,7 @@ async function createLayout(){
     const e = known.find(k => k.name.toLowerCase() === x.toLowerCase()); tags.push(e ? e.name : x);
   });
   const data = {id, name, type:$('#nl-type').value, status:$('#nl-status').value, purpose:$('#nl-purpose').value.trim(),
-    tags, workers:[me()], createdBy:me(), createdAt:t, updatedAt:t,
+    tags, workers:[me()], createdBy:me(), createdAt:t, updatedAt:t, updatedBy:me(),
     steps:$('#nl-example').checked ? BASE_STEPS.map(n => newStep(n)) : [], files:[], results:[]};
   try {
     const r = await GH.putJson(layoutPath(id), data, null, `Create layout ${name} [${me()}]`);
@@ -1218,7 +1222,7 @@ async function createRecipe(){
   const id = rid(), t = Date.now();
   const btn = modal.querySelector('[data-act="createrecipe"]'); btn.disabled = true;
   const data = {id, name, process:$('#nr-proc').value.trim(), version:$('#nr-ver').value.trim(), status:$('#nr-status').value, tools:$('#nr-tools').value.trim(),
-    body:$('#nr-body').value, files:[], issues:[], history:[{by:me(), at:t, note:'Created'}], createdBy:me(), createdAt:t, updatedAt:t};
+    body:$('#nr-body').value, files:[], issues:[], history:[{by:me(), at:t, note:'Created'}], createdBy:me(), createdAt:t, updatedAt:t, updatedBy:me()};
   try {
     const r = await GH.putJson(recipePath(id), data, null, `Create recipe ${name} [${me()}]`);
     S.srv[rKey(id)] = {data, sha:r.sha}; rebuild();
