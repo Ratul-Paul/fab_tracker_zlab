@@ -522,3 +522,24 @@ textarea.txt{width:100%;resize:vertical;display:block}
 
 /* ---- last modified line under card titles ---- */
 .lm{font-size:12.5px;color:var(--faint);margin:0 0 6px;line-height:1.3}
+
+/* ---- progress bar: unfinished segments visible on dark backgrounds ---- */
+.strip i{background:color-mix(in srgb,var(--ink) 15%,var(--raised));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 34%,transparent)}
+.strip i.pass,.strip i.fail{box-shadow:none}
+.strip.none{border-bottom-color:color-mix(in srgb,var(--ink) 35%,transparent)}
+
+/* ---- overview cards: more compact vertically ---- */
+.rows{gap:8px}
+.row{padding:10px 16px;gap:6px 14px}
+.nm{margin-bottom:0;line-height:1.25}
+.lm{margin:1px 0 4px}
+.row .tagrow{gap:3px}
+.row .tag,.row .tagc{font-size:11.5px;padding:0 8px}
+.c-who{gap:2px}
+.pline{display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
+.pline .strip{flex:1 1 90px;min-width:90px}
+.pline small{display:inline;margin:0;white-space:nowrap}
+.row .tlrow{gap:3px;margin-top:5px}
+.row .tlc{font-size:11.5px;line-height:1.4;padding:0 8px}
+.row .tlc b,.row .tlc.none b{min-width:5.6em}
+@media (max-width:720px){ .row{padding:10px 12px} .rows{gap:8px} .pline small{white-space:normal} }

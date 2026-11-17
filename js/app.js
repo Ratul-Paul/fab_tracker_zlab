@@ -2,7 +2,7 @@
 'use strict';
 
 const CFG = window.FAB_CONFIG || {};
-const BUILD = '2026-11-22-1';
+const BUILD = '2026-11-23-1';
 const LS_KEY = 'fabtracker.v1';
 const MAX_UPLOAD = 25 * 1024 * 1024;
 const SYNC_MS = 30000;
@@ -692,7 +692,7 @@ function sortLayouts(arr, key, dirName){
 }
 function lmLine(d){
   if (!d.updatedAt) return '';
-  return `<div class="lm" title="Last modified ${esc(new Date(d.updatedAt).toLocaleString())}">Modified ${esc(fmt(d.updatedAt))}${d.updatedBy ? ' · ' + esc(d.updatedBy) : ''}</div>`;
+  return `<div class="lm" title="Last modified ${esc(new Date(d.updatedAt).toLocaleString())}">Modified ${esc(fmt(d.updatedAt))}</div>`;
 }
 function ovRow(l){
   const st = stats(l), oi = openIssues(l);
@@ -701,7 +701,7 @@ function ovRow(l){
   return `<div class="row ${tint}" role="link" tabindex="0" data-act="open" data-id="${l.id}">
         <div><div class="nm">${esc(l.name)}</div>${lmLine(l)}<div class="tagrow">${l.type ? `<span class="tag ${l.type}">${l.type === 'active' ? 'Active' : 'Passive'}</span>` : ''}${S.group === 'none' ? `<span class="tagc">${esc(stLabel)}</span>` : ''}${tagChips(l)}</div></div>
         <div class="c-who">${l.workers.length ? l.workers.map(w => who(w)).join('') : '<span class="who">Unassigned</span>'}</div>
-        <div class="c-prog">${strip(l)}${tlChips(l)}<small>${st.total ? `${st.pass} of ${st.total} done${st.fail ? ` · ${st.fail} failed` : ''}` : 'No steps yet'}${oi ? ` · <span class="iss">${oi} open issue${oi > 1 ? 's' : ''}</span>` : ''}${overdueSteps(l) ? ` · <span class="iss">${overdueSteps(l)} overdue</span>` : ''}${l.comments.length ? ` · ${plural(l.comments.length, 'comment')}` : ''}</small></div>
+        <div class="c-prog"><div class="pline">${strip(l)}<small>${st.total ? `${st.pass} of ${st.total} done${st.fail ? ` · ${st.fail} failed` : ''}` : 'No steps yet'}${oi ? ` · <span class="iss">${oi} open issue${oi > 1 ? 's' : ''}</span>` : ''}${overdueSteps(l) ? ` · <span class="iss">${overdueSteps(l)} overdue</span>` : ''}${l.comments.length ? ` · ${plural(l.comments.length, 'comment')}` : ''}</small></div>${tlChips(l)}
       </div>`;
 }
 function ovList(){
