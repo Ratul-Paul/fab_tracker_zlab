@@ -580,3 +580,12 @@ textarea.txt{width:100%;resize:vertical;display:block}
   50%{transform:scale(1.22);box-shadow:0 0 0 5px color-mix(in srgb,currentColor 10%,transparent)}
 }
 .tlc.on .dot{animation:breathe 2.6s ease-in-out infinite}
+
+/* ---- build 2026-11-27: tighter gap between cards and a thinner border ---- */
+.rows{gap:6px}
+.row{border-width:1px}
+.row+.row{border-top-width:1px}
+@media (max-width:720px){ .rows{gap:6px} }
+
+/* ---- build 2026-11-28: sharp rectangular cards (layouts and recipes) ---- */
+.row{border-radius:0}

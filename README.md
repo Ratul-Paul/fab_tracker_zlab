@@ -99,7 +99,7 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
   filter by one or more tags.
 - **Overview cards** show name, when it was last modified, tags and progress (people are on the layout's own page), plus a chip for each of Design, Fab and Measurement:
   a green check with the date range when finished, a solid blue chip with "since Nov 5 · day 4" while ongoing, a solid
-  red chip when overdue, and a faint dashed chip when not started. Each of the three has its own row, on every card. Cards have a 2px border and are spaced apart. A layout's description is on its own page (search
+  red chip when overdue, and a faint dashed chip when not started. Each of the three has its own row, on every card. Cards are sharp rectangles with a thin 1px border and a small gap between them. A layout's description is on its own page (search
   still looks inside it). Cards also carry a faint tint: red when any step has an open issue, blue-grey while In fab. Done cards get a green outline only, and Measuring cards a teal-blue outline, with no tint. The dot on an ongoing section chip gently pulses (it stops for people who have reduced motion turned on in their system).
 - **Sort, group and collapse** (overview page): sort layouts by last updated, date created, name, Design start,
   Fab start, Fab finish or Measurement start. The arrow button reverses the order, and layouts without that date always
@@ -143,6 +143,7 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
     Lines written as `Key: value` show as a tidy parameter list on the recipe page.
   - Attach **files** (uploads up to 25 MB, or Box and Drive links), for example a recipe exported from the tool.
   - A recipe can have its own **issues**, which you report and mark resolved or reopened, just like on a step.
+  - On the Recipes page, each process section can be collapsed with its arrow (remembered in your browser).
   - The page lists every **layout and step that uses the recipe**, and a **history** of who changed what.
   - **Duplicate as a new version** makes a draft copy to edit. Mark the old one Retired.
   - On any step, the **Recipe used** dropdown lists your recipes, with the ones matching the step's name

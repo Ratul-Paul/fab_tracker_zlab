@@ -2,7 +2,7 @@
 'use strict';
 
 const CFG = window.FAB_CONFIG || {};
-const BUILD = '2026-11-26-1';
+const BUILD = '2026-11-28-1';
 const LS_KEY = 'fabtracker.v1';
 const MAX_UPLOAD = 25 * 1024 * 1024;
 const SYNC_MS = 30000;
@@ -39,7 +39,7 @@ const S = {
   cfg:null, me:null, canWrite:true, mode:'boot', err:'', setupErr:'',
   srv:{}, pend:{}, queue:{}, busy:{}, L:[], byId:{},
   presets:[], presetsSha:null, loaded:false, syncing:false, lastSync:0,
-  q:'', type:'all', collapsed:{}, gsort:{}, R:[], RBy:{}, recipeCustom:[], replyTo:'', replyPrefill:'', editComment:'', rq:'', rproc:'all', rstatus:'all', editRBody:false, tagFilter:[], sortKey:'updated', sortDir:'desc', group:'status', editBlock:null, selMode:false, sel:[], kindFilter:'all', tab:'fab', open:{}, fileStep:'', armed:null,
+  q:'', type:'all', collapsed:{}, rcollapsed:{}, gsort:{}, R:[], RBy:{}, recipeCustom:[], replyTo:'', replyPrefill:'', editComment:'', rq:'', rproc:'all', rstatus:'all', editRBody:false, tagFilter:[], sortKey:'updated', sortDir:'desc', group:'status', editBlock:null, selMode:false, sel:[], kindFilter:'all', tab:'fab', open:{}, fileStep:'', armed:null,
   down:false, dirty:false, blobs:{}
 };
 const $ = s => document.querySelector(s);
@@ -67,8 +67,8 @@ function toast(msg){
 const errText = e => (e && e.detail) ? `${e.status}: ${e.detail}` : (e && e.status ? String(e.status) : 'network error');
 
 const VIEW_KEY = 'fabtracker.view';
-try { const v = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}'); if (v.sortKey) S.sortKey = v.sortKey; if (v.sortDir) S.sortDir = v.sortDir; if (v.group) S.group = v.group; if (v.collapsed) S.collapsed = v.collapsed; if (v.gsort) S.gsort = v.gsort; } catch (_) {}
-const saveView = () => { try { localStorage.setItem(VIEW_KEY, JSON.stringify({sortKey:S.sortKey, sortDir:S.sortDir, group:S.group, collapsed:S.collapsed, gsort:S.gsort})); } catch (_) {} };
+try { const v = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}'); if (v.sortKey) S.sortKey = v.sortKey; if (v.sortDir) S.sortDir = v.sortDir; if (v.group) S.group = v.group; if (v.collapsed) S.collapsed = v.collapsed; if (v.rcollapsed) S.rcollapsed = v.rcollapsed; if (v.gsort) S.gsort = v.gsort; } catch (_) {}
+const saveView = () => { try { localStorage.setItem(VIEW_KEY, JSON.stringify({sortKey:S.sortKey, sortDir:S.sortDir, group:S.group, collapsed:S.collapsed, rcollapsed:S.rcollapsed, gsort:S.gsort})); } catch (_) {} };
 const GSORTS = [['global','Same as main sort'],['modified','Last modified'],['newest','Newest first'],['oldest','Oldest first']];
 const SORTS = [['updated','Last updated'],['created','Date created'],['name','Name'],['design','Design start'],['fab','Fab start'],['fabend','Fab finish'],['results','Measurement start']];
 
@@ -904,7 +904,12 @@ function rList(){
   const groups = new Map();
   list.forEach(r => { const k = r.process || 'No process'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
   return [...groups.entries()].sort(([a], [b]) => a === 'No process' ? 1 : b === 'No process' ? -1 : a.localeCompare(b))
-    .map(([k, arr]) => `<section class="group"><h2>${esc(k)} <span>${arr.length}</span></h2><div class="rows">${arr.map(rRow).join('')}</div></section>`).join('');
+    .map(([k, arr]) => {
+      const col = !!S.rcollapsed[k];
+      return `<section class="group ${col ? 'collapsed' : ''}"><div class="ghead">
+      <button class="gtoggle" data-act="rgtoggle" data-g="${esc(k)}" aria-expanded="${!col}" title="${col ? 'Show' : 'Hide'} ${esc(k)}">${ico('chev')}<span class="gname">${esc(k)}</span><span class="gcount">${arr.length}</span></button>
+    </div>${col ? '' : `<div class="rows">${arr.map(rRow).join('')}</div>`}</section>`;
+    }).join('');
 }
 function viewRecipes(){
   const procs = [...new Set(S.R.map(r => r.process).filter(Boolean))].sort();
@@ -1824,6 +1829,7 @@ document.addEventListener('click', e => {
     case 'cmcancel': S.editComment = ''; sched(); break;
     case 'cmsave': saveCommentEdit(t.dataset.cid); break;
     case 'cmdel': arm('cm' + t.dataset.cid, () => delComment(cmTarget(), t.dataset.cid)); break;
+    case 'rgtoggle': S.rcollapsed[t.dataset.g] = !S.rcollapsed[t.dataset.g]; saveView(); sched(); break;
     case 'gtoggle': S.collapsed[t.dataset.g] = !S.collapsed[t.dataset.g]; saveView(); sched(); break;
     case 'secnow': setSecDate(lid, t.dataset.sec, t.dataset.which, todayStr()); break;
     case 'dupe': openDuplicate(id); break;
