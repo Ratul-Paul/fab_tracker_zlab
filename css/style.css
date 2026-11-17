@@ -543,3 +543,17 @@ textarea.txt{width:100%;resize:vertical;display:block}
 .row .tlc{font-size:11.5px;line-height:1.4;padding:0 8px}
 .row .tlc b,.row .tlc.none b{min-width:5.6em}
 @media (max-width:720px){ .row{padding:10px 12px} .rows{gap:8px} .pline small{white-space:normal} }
+
+/* ---- build 2026-11-24: two-column cards, clearly separated, readable on dark backgrounds ---- */
+.row:not(.rrow){grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+.rows{gap:12px}
+.row{padding:12px 16px;gap:6px 18px;border-color:color-mix(in srgb,var(--ink) 22%,var(--raised))}
+.row+.row{border-top-color:color-mix(in srgb,var(--ink) 22%,var(--raised))}
+.row:hover{border-color:color-mix(in srgb,var(--ink) 40%,var(--raised))}
+.row.tint-issue{border-color:color-mix(in srgb,var(--fail) 55%,var(--line-strong))}
+.row.tint-fab{border-color:color-mix(in srgb,var(--accent) 50%,var(--line-strong))}
+.row.tint-done{border-color:color-mix(in srgb,var(--pass) 50%,var(--line-strong))}
+.row.tint-issue:hover{border-color:var(--fail)}
+.row.tint-fab:hover{border-color:var(--accent)}
+.row.tint-done:hover{border-color:var(--pass)}
+@media (max-width:720px){ .row:not(.rrow){grid-template-columns:1fr} .row{padding:12px} .rows{gap:10px} }

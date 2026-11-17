@@ -97,7 +97,7 @@ Every layout has three sections, shown as tabs: **Design**, **Fab** and **Result
   purpose, and **tags**. Tags are free text (Full laser, Passive only, Deep trench, Cleaved, No PECVD
   are suggested, and any tag you type is offered to everyone next time). On the overview page you can
   filter by one or more tags.
-- **Overview rows** show name, when it was last modified, tags, people and progress, plus a chip for each of Design, Fab and Measurement:
+- **Overview cards** show name, when it was last modified, tags and progress (people are on the layout's own page), plus a chip for each of Design, Fab and Measurement:
   a green check with the date range when finished, a solid blue chip with "since Nov 5 · day 4" while ongoing, a solid
   red chip when overdue, and a faint dashed chip when not started. Each of the three has its own row, on every card. Cards have a 2px border and are spaced apart. A layout's description is on its own page (search
   still looks inside it). Rows also carry a faint tint: red when any step has an open issue, blue-grey while In fab,
