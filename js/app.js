@@ -2,7 +2,7 @@
 'use strict';
 
 const CFG = window.FAB_CONFIG || {};
-const BUILD = '2026-11-24-1';
+const BUILD = '2026-11-26-1';
 const LS_KEY = 'fabtracker.v1';
 const MAX_UPLOAD = 25 * 1024 * 1024;
 const SYNC_MS = 30000;
@@ -696,7 +696,7 @@ function lmLine(d){
 }
 function ovRow(l){
   const st = stats(l), oi = openIssues(l);
-  const tint = oi ? 'tint-issue' : l.status === 'infab' ? 'tint-fab' : l.status === 'done' ? 'tint-done' : '';
+  const tint = oi ? 'tint-issue' : l.status === 'infab' ? 'tint-fab' : l.status === 'done' ? 'tint-done' : l.status === 'measuring' ? 'tint-measure' : '';
   const stLabel = (STATUS.find(x => x[0] === (l.status || 'planned')) || [])[1] || '';
   return `<div class="row ${tint}" role="link" tabindex="0" data-act="open" data-id="${l.id}">
         <div><div class="nm">${esc(l.name)}</div>${lmLine(l)}<div class="tagrow">${l.type ? `<span class="tag ${l.type}">${l.type === 'active' ? 'Active' : 'Passive'}</span>` : ''}${S.group === 'none' ? `<span class="tagc">${esc(stLabel)}</span>` : ''}${tagChips(l)}</div></div>

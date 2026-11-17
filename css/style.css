@@ -557,3 +557,26 @@ textarea.txt{width:100%;resize:vertical;display:block}
 .row.tint-fab:hover{border-color:var(--accent)}
 .row.tint-done:hover{border-color:var(--pass)}
 @media (max-width:720px){ .row:not(.rrow){grid-template-columns:1fr} .row{padding:12px} .rows{gap:10px} }
+
+/* ---- build 2026-11-25: square progress segments, Done cards outlined only ---- */
+.strip{flex-wrap:wrap;gap:3px;height:auto;align-items:center}
+.strip i{flex:0 0 auto;width:12px;height:12px;min-width:0;max-width:none;border-radius:3px}
+.strip.big{height:auto;gap:4px}
+.strip.big i{width:18px;height:18px;max-width:none;border-radius:4px}
+.strip.none{height:12px;flex-wrap:nowrap}
+.strip.none.big{height:18px}
+.pline .strip{flex:1 1 90px;min-width:90px}
+.row.tint-done{background:var(--raised);border-color:color-mix(in srgb,var(--pass) 65%,var(--line-strong))}
+.row.tint-done:hover{background:var(--surface);border-color:var(--pass)}
+
+/* ---- build 2026-11-26: Measuring cards get a teal-blue outline; the ongoing dot breathes ---- */
+:root{--measure:#0B83A0}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--measure:#4CC3DE} }
+:root[data-theme="dark"]{--measure:#4CC3DE}
+.row.tint-measure{background:var(--raised);border-color:color-mix(in srgb,var(--measure) 70%,var(--line-strong))}
+.row.tint-measure:hover{background:var(--surface);border-color:var(--measure)}
+@keyframes breathe{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 2px color-mix(in srgb,currentColor 40%,transparent)}
+  50%{transform:scale(1.22);box-shadow:0 0 0 5px color-mix(in srgb,currentColor 10%,transparent)}
+}
+.tlc.on .dot{animation:breathe 2.6s ease-in-out infinite}
